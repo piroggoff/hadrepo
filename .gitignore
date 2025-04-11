@@ -1,2 +1,6 @@
 # Created by venv; see https://docs.python.org/3/library/venv.html
+.idea
 .venv
+flight-analysis/data/cleaned
+flight-analysis/data/processed
+flight-analysis/data/raw/*.csv
