@@ -4,7 +4,7 @@ import subprocess
 # Download latest version
 path = kagglehub.dataset_download("shubhambathwal/flight-price-prediction")
 
-err = subprocess.run(f'mv {path}/*.csv $(pwd)', shell=True, stderr=subprocess.PIPE, text=True)
+err = subprocess.run(f'mv {path}/*.csv $(pwd)', shell=True ,stdout=None, stderr=subprocess.PIPE, text=True)
 
 if err:
     with open('error.log', 'w') as f:
