@@ -2,5 +2,5 @@
 .idea
 .venv
 flight-analysis/data/cleaned
-flight-analysis/data/processed
-flight-analysis/data/raw/*.csv
+flight-analysis/data/processed/
+flight-analysis/data/raw/*
