@@ -11,3 +11,4 @@ print(data_path)
 path = kagglehub.dataset_download(handle="shubhambathwal/flight-price-prediction/versions/2")
 
 shutil.move(path, data_path)
+print("Files stored at {path}")
