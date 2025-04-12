@@ -1,7 +1,18 @@
-import pandas as pd
+# src/cleaning.py
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import col
 import os
-from pyspark.sql import SparkSession, DataFrame
 
+def remove_duplicates(df: DataFrame) -> DataFrame:
+    return df.dropDuplicates()
+
+def drop_nulls(df: DataFrame, columns: list[str]) -> DataFrame:
+    return df.dropna(subset=columns)
+
+def standardize_column_names(df: DataFrame) -> DataFrame:
+    # Преобразует названия столбцов в нижний регистр и заменяет пробелы на "_"
+    renamed = [col_name.lower().replace(" ", "_") for col_name in df.columns]
+    return df.toDF(*renamed)
 
 def get_data(spark: SparkSession, data_dir: str = None) -> Generator[DataFrame, any, any]:
     
