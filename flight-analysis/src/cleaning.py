@@ -134,7 +134,7 @@ def save_to_hbase(df):
             }
         }
     })
-
+#sosi
     (df.write
       .format("org.apache.hadoop.hbase.spark")
       .option("catalog", catalog)
