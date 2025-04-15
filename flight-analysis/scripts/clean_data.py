@@ -1,10 +1,12 @@
 import cleaning
-
+from pyspark.sql import SparkSession
 
 print("1. Сохранение данных в raw\n2. экспорт данных в HBase\n3. просмотр результата\n")
 mode = int(input())
 
-df = cleaning.start_and_read()
+spark = SparkSession.builder.appName("FlightDataToHBase").getOrCreate()
+df = spark.read.option('header', 'true').csv("../data/raw/itineraries.csv")
+
 
 df_cleaned = cleaning.clean_data(df)
 

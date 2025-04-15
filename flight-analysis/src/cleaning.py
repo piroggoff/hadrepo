@@ -3,14 +3,7 @@ from pyspark.sql import functions as F
 import happybase
 import json
 
-def start_and_read():
-    # Инициализация Spark
-    spark = SparkSession.builder.appName("FlightDataToHBase").getOrCreate()
 
-    # 1. Загрузка данных
-    df = spark.read.option('header', 'true').csv("../data/raw/itineraries.csv")
-
-    return df
 
 # 2. Очистка данных
 def clean_data(df):
@@ -184,6 +177,7 @@ def save_to_data(df,mode):
 
 def save_to_hbase(df_hbase, table_name='flight', host='localhost', port=9090):
     # Собираем данные в драйвер
+
     data = df_hbase.collect()
 
     # Подключение к HBase через Thrift
