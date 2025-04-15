@@ -175,21 +175,17 @@ def save_to_data(df,mode):
 #
 #   TODO: 1. сохранение в hdfs 2. порт в hbase (лучше сразу созранять в hbase)
 
-def save_to_hbase(df_hbase, table_name='flight', host='localhost', port=9090):
-    # Собираем данные в драйвер
-
-    data = df_hbase.collect()
+def write_partition(partition):
+    import happybase
+    from collections import defaultdict
 
     # Подключение к HBase через Thrift
-    connection = happybase.Connection(host=host, port=port)
-    table = connection.table(table_name)
-
-    # Сгруппировать данные по rowkey и по column family
-    from collections import defaultdict
+    connection = happybase.Connection(host='localhost', port=9090)
+    table = connection.table('flight')
 
     rows = defaultdict(dict)
 
-    for row in data:
+    for row in partition:
         rowkey = row['rowkey']
         family = row['family']
         qualifier = row['qualifier']
@@ -197,9 +193,39 @@ def save_to_hbase(df_hbase, table_name='flight', host='localhost', port=9090):
         column = f"{family}:{qualifier}"
         rows[rowkey][column] = value.encode('utf-8') if value is not None else b''
 
-    # Пакетная вставка
+    # Пакетная вставка в HBase
     with table.batch() as batch:
         for rowkey, columns in rows.items():
             batch.put(rowkey, columns)
 
     connection.close()
+def save_to_hbase(df_hbase, table_name='flight', host='localhost', port=9090):
+    # Собираем данные в драйвер
+
+    df_hbase.rdd.foreachPartition(write_partition)
+
+    # data = df_hbase.collect()
+    #
+    # # Подключение к HBase через Thrift
+    # connection = happybase.Connection(host=host, port=port)
+    # table = connection.table(table_name)
+    #
+    # # Сгруппировать данные по rowkey и по column family
+    # from collections import defaultdict
+    #
+    # rows = defaultdict(dict)
+    #
+    # for row in data:
+    #     rowkey = row['rowkey']
+    #     family = row['family']
+    #     qualifier = row['qualifier']
+    #     value = row['value']
+    #     column = f"{family}:{qualifier}"
+    #     rows[rowkey][column] = value.encode('utf-8') if value is not None else b''
+    #
+    # # Пакетная вставка
+    # with table.batch() as batch:
+    #     for rowkey, columns in rows.items():
+    #         batch.put(rowkey, columns)
+    #
+    # connection.close()
