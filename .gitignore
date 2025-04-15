@@ -3,4 +3,4 @@
 .venv
 flight-analysis/data/cleaned
 flight-analysis/data/processed/
-flight-analysis/data/raw/_*
+flight-analysis/data/raw/*

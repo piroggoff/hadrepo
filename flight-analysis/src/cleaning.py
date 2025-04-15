@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-
+import happybase
 import json
 
 def start_and_read():
@@ -68,49 +68,107 @@ def process_segments(df):
 
 
 # 4. Подготовка для HBase
+# def prepare_hbase_data(df):
+#     # Создание rowkey
+#     df = df.withColumn("rowkey",
+#                        F.concat_ws("|", F.col("legId"), F.col("flightDate")))
+#
+#     # Создание колонок HBase
+#     # TODO: пересмоьтреть выбор колонок
+#     columns_mapping = {
+#         "cf1": ["startingAirport", "destinationAirport", "totalFare", "baseFare"],
+#         "cf2": ["segmentsDepartureAirportCode", "segmentsArrivalAirportCode"],
+#         "cf3": ["segmentsAirlineCode", "segmentsEquipmentDescription"]
+#     }
+#
+#     # Преобразование в HBase-формат
+#     hbase_columns = [F.col("rowkey")]
+#
+#     # Простые колонки
+#     for cf, cols in columns_mapping.items():
+#         for col_name in cols:
+#             if not col_name.startswith("segments"):
+#                 hbase_columns.append(
+#                     F.create_map(
+#                         F.lit(f"{cf}:{col_name}"),
+#                         F.col(col_name).cast("string")
+#                     ).alias(f"{cf}_{col_name}")
+#                 )
+#
+#     # Сегментные колонки (преобразуем в JSON)
+#     segment_columns = [c for c in df.columns if c.startswith("segments")]
+#     for col_name in segment_columns:
+#         cf = "cf2" if "Airport" in col_name else "cf3"
+#         hbase_columns.append(
+#             F.create_map(
+#                 F.lit(f"{cf}:{col_name}"),
+#                 F.to_json(F.col(col_name))
+#             ).alias(f"{cf}_{col_name}")
+#         )
+#
+#     return df.select(*hbase_columns)
+
+
+from pyspark.sql import functions as F
+
+
 def prepare_hbase_data(df):
     # Создание rowkey
-    df = df.withColumn("rowkey",
-                       F.concat_ws("|", F.col("legId"), F.col("flightDate")))
+    df = df.withColumn("rowkey", F.concat_ws("|", F.col("legId"), F.col("flightDate")))
 
-    # Создание колонок HBase
     columns_mapping = {
         "cf1": ["startingAirport", "destinationAirport", "totalFare", "baseFare"],
         "cf2": ["segmentsDepartureAirportCode", "segmentsArrivalAirportCode"],
         "cf3": ["segmentsAirlineCode", "segmentsEquipmentDescription"]
     }
 
-    # Преобразование в HBase-формат
-    hbase_columns = [F.col("rowkey")]
+    # Создаем структуры для HBase колонок
+    hbase_columns = []
 
-    # Простые колонки
+    # Обработка простых колонок
     for cf, cols in columns_mapping.items():
         for col_name in cols:
             if not col_name.startswith("segments"):
                 hbase_columns.append(
-                    F.create_map(
-                        F.lit(f"{cf}:{col_name}"),
-                        F.col(col_name).cast("string")
-                    ).alias(f"{cf}_{col_name}")
+                    F.struct(
+                        F.lit(cf).alias("family"),
+                        F.lit(col_name).alias("qualifier"),
+                        F.col(col_name).cast("string").alias("value")
+                    )
                 )
 
-    # Сегментные колонки (преобразуем в JSON)
+    # Обработка сегментных колонок
     segment_columns = [c for c in df.columns if c.startswith("segments")]
     for col_name in segment_columns:
         cf = "cf2" if "Airport" in col_name else "cf3"
+        col_type = dict(df.dtypes)[col_name]
+
+        if col_type.startswith("struct") or col_type.startswith("array") or col_type.startswith("map"):
+            value_expr = F.to_json(F.col(col_name))
+        else:
+            value_expr = F.col(col_name).cast("string")
+
         hbase_columns.append(
-            F.create_map(
-                F.lit(f"{cf}:{col_name}"),
-                F.to_json(F.col(col_name))
-            ).alias(f"{cf}_{col_name}")
+            F.struct(
+                F.lit(cf).alias("family"),
+                F.lit(col_name).alias("qualifier"),
+                value_expr.alias("value")
+            )
         )
 
-    return df.select(*hbase_columns)
+    # Собираем все колонки в массив и разбиваем на строки
+    df = df.withColumn("hbase_columns", F.array(*hbase_columns))
+    df = df.select("rowkey", F.explode("hbase_columns").alias("column"))
+
+    # Разделение структуры на отдельные поля
+    return df.select(
+        "rowkey",
+        F.col("column.family").alias("family"),
+        F.col("column.qualifier").alias("qualifier"),
+        F.col("column.value").alias("value")
+    )
 
 
-# hbase_df = prepare_hbase_data(df_processed)
-
-# hbase_df.show(5, truncate=False)
 
 def save_to_data(df,mode):
     if mode == 1:
@@ -120,24 +178,34 @@ def save_to_data(df,mode):
         df.coalesce(1).write.mode('overwrite').parquet('../data/cleaned')
 
 
-# 6. Сохранение (раскомментируйте когда будете готовы)
-def save_to_hbase(df):
-    catalog = json.dumps({
-        "table": {"namespace": "default", "name": "flight_data"},
-        "rowkey": "rowkey",
-        "columns": {
-            "rowkey": {"cf": "rowkey", "col": "rowkey", "type": "string"},
-            **{
-                f"{col}": {"cf": col.split("_")[0], "col": "_".join(col.split("_")[1:]), "type": "string"}
-                for col in df.columns
-                if col != "rowkey"
-            }
-        }
-    })
-#so
-    (df.write
-      .format("org.apache.hadoop.hbase.spark")
-      .option("catalog", catalog)
-      .option("hbase.spark.use.hbasecontext", "false")
-      .save())
+# 6. Сохранение
+#
+#   TODO: 1. сохранение в hdfs 2. порт в hbase (лучше сразу созранять в hbase)
 
+def save_to_hbase(df_hbase, table_name='flight', host='localhost', port=9090):
+    # Собираем данные в драйвер
+    data = df_hbase.collect()
+
+    # Подключение к HBase через Thrift
+    connection = happybase.Connection(host=host, port=port)
+    table = connection.table(table_name)
+
+    # Сгруппировать данные по rowkey и по column family
+    from collections import defaultdict
+
+    rows = defaultdict(dict)
+
+    for row in data:
+        rowkey = row['rowkey']
+        family = row['family']
+        qualifier = row['qualifier']
+        value = row['value']
+        column = f"{family}:{qualifier}"
+        rows[rowkey][column] = value.encode('utf-8') if value is not None else b''
+
+    # Пакетная вставка
+    with table.batch() as batch:
+        for rowkey, columns in rows.items():
+            batch.put(rowkey, columns)
+
+    connection.close()

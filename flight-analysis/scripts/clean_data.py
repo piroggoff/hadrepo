@@ -20,6 +20,7 @@ if mode == 1:
 
 elif mode == 2:
     hbase_df=cleaning.prepare_hbase_data(df)
+    cleaning.save_to_hbase(hbase_df)
 
 
 elif mode == 3:
