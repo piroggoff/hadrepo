@@ -5,6 +5,7 @@ print("1. Сохранение данных в raw\n2. экспорт данны
 mode = int(input())
 
 spark = SparkSession.builder.appName("FlightDataToHBase").getOrCreate()
+spark.sparkContext.setLogLevel("INFO")
 df = spark.read.option('header', 'true').csv("../data/raw/itineraries.csv")
 
 

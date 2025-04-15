@@ -177,28 +177,33 @@ def save_to_data(df,mode):
 
 def write_partition(partition):
     import happybase
+    import socket
     from collections import defaultdict
 
-    # Подключение к HBase через Thrift
-    connection = happybase.Connection(host='localhost', port=9090)
-    table = connection.table('flight')
+    try:
+        socket.setdefaulttimeout(10)  # ограничить соединение
+        connection = happybase.Connection(host='localhost', port=9090, timeout=5000)
+        table = connection.table('flight')
 
-    rows = defaultdict(dict)
+        rows = defaultdict(dict)
 
-    for row in partition:
-        rowkey = row['rowkey']
-        family = row['family']
-        qualifier = row['qualifier']
-        value = row['value']
-        column = f"{family}:{qualifier}"
-        rows[rowkey][column] = value.encode('utf-8') if value is not None else b''
+        for row in partition:
+            rowkey = row['rowkey']
+            family = row['family']
+            qualifier = row['qualifier']
+            value = row['value']
+            column = f"{family}:{qualifier}"
+            rows[rowkey][column] = value.encode('utf-8') if value is not None else b''
 
-    # Пакетная вставка в HBase
-    with table.batch() as batch:
-        for rowkey, columns in rows.items():
-            batch.put(rowkey, columns)
+        with table.batch() as batch:
+            for rowkey, columns in rows.items():
+                batch.put(rowkey, columns)
 
-    connection.close()
+        connection.close()
+
+    except Exception as e:
+        import traceback
+        print("Exception in write_partition:", traceback.format_exc())
 def save_to_hbase(df_hbase, table_name='flight', host='localhost', port=9090):
     # Собираем данные в драйвер
 
