@@ -60,49 +60,9 @@ def process_segments(df):
 #df_processed = process_segments(df_cleaned)
 
 
-# 4. Подготовка для HBase
-# def prepare_hbase_data(df):
-#     # Создание rowkey
-#     df = df.withColumn("rowkey",
-#                        F.concat_ws("|", F.col("legId"), F.col("flightDate")))
-#
-#     # Создание колонок HBase
-#     # TODO: пересмоьтреть выбор колонок
-#     columns_mapping = {
-#         "cf1": ["startingAirport", "destinationAirport", "totalFare", "baseFare"],
-#         "cf2": ["segmentsDepartureAirportCode", "segmentsArrivalAirportCode"],
-#         "cf3": ["segmentsAirlineCode", "segmentsEquipmentDescription"]
-#     }
-#
-#     # Преобразование в HBase-формат
-#     hbase_columns = [F.col("rowkey")]
-#
-#     # Простые колонки
-#     for cf, cols in columns_mapping.items():
-#         for col_name in cols:
-#             if not col_name.startswith("segments"):
-#                 hbase_columns.append(
-#                     F.create_map(
-#                         F.lit(f"{cf}:{col_name}"),
-#                         F.col(col_name).cast("string")
-#                     ).alias(f"{cf}_{col_name}")
-#                 )
-#
-#     # Сегментные колонки (преобразуем в JSON)
-#     segment_columns = [c for c in df.columns if c.startswith("segments")]
-#     for col_name in segment_columns:
-#         cf = "cf2" if "Airport" in col_name else "cf3"
-#         hbase_columns.append(
-#             F.create_map(
-#                 F.lit(f"{cf}:{col_name}"),
-#                 F.to_json(F.col(col_name))
-#             ).alias(f"{cf}_{col_name}")
-#         )
-#
-#     return df.select(*hbase_columns)
 
 
-from pyspark.sql import functions as F
+
 
 
 def prepare_hbase_data(df):
