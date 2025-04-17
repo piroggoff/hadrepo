@@ -1,0 +1,10 @@
+README.md
+setup.py
+src/cleaning.py
+src/config.py
+src/writing.py
+src/flight_analysis.egg-info/PKG-INFO
+src/flight_analysis.egg-info/SOURCES.txt
+src/flight_analysis.egg-info/dependency_links.txt
+src/flight_analysis.egg-info/requires.txt
+src/flight_analysis.egg-info/top_level.txt
