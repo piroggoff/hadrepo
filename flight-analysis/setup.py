@@ -4,11 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name="flight-analysis",
     version="0.1",
-    py_modules=[
-        "cleaning",
-        "config",
-        "writing"
-    ],
+    packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=[
         "bleach == 6.2.0",

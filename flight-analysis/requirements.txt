@@ -6,7 +6,6 @@ cramjam==2.10.0
 cycler==0.12.1
 Cython==3.0.12
 fastparquet==2024.11.0
--e git+https://github.com/piroggoff/hadrepo.git@33e2d843e3b44d230551721f46eaa11a36080b18#egg=flight_analysis&subdirectory=flight-analysis
 fonttools==4.57.0
 fsspec==2025.3.2
 happybase==1.2.0

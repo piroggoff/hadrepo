@@ -2,6 +2,7 @@ import glob
 import kagglehub
 import os
 import shutil
+from src.config import Paths
 
 dataset = "dilwong/flightprices"
 
