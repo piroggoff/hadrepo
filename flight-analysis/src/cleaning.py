@@ -1,4 +1,4 @@
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
 from typing import Optional
 import json
@@ -17,18 +17,18 @@ class FlightDataProcessor:
             .appName("FlightDataToHBase") \
             .getOrCreate()
     
-    def process_pipeline(self, input_path: Optional[str] = "../data/raw/itineraries.csv") -> 'pyspark.sql.DataFrame':
+    def process_pipeline(self, input_path: Optional[str] = "../data/raw/itineraries.csv") -> DataFrame:
         df = self._load_data(input_path)
         df_cleaned = self._clean_data(df)
         df_processed = self._process_segments(df_cleaned)
         df_hbase = self._prepare_hbase_data(df_processed)
         return df_hbase
 
-    def _load_data(self, path: str) -> 'pyspark.sql.DataFrame':
+    def _load_data(self, path: str) -> DataFrame:
         df = self.spark.read.option('header', 'true').csv(path)
         return df
 
-    def _clean_data(self, df) -> 'pyspark.sql.DataFrame':
+    def _clean_data(self, df) -> DataFrame:
         df = df.dropDuplicates(["legId"])
     
         # Удаление строк с критически важными null значениями
@@ -46,7 +46,7 @@ class FlightDataProcessor:
     
         return df
 
-    def _process_segments(self, df) -> 'pyspark.sql.DataFrame':
+    def _process_segments(self, df) -> DataFrame:
         # Автоматическое определение колонок с сегментами
         segment_columns = [c for c in df.columns if c.startswith("segments") or c.startswith("segments")]
     
@@ -72,7 +72,7 @@ class FlightDataProcessor:
     
         return df.drop(*[f"{c}_count" for c in segment_columns])
      
-    def _prepare_hbase_data(self, df) -> 'pyspark.sql.DataFrame':
+    def _prepare_hbase_data(self, df) -> DataFrame:
         # Создание rowkey
         df = df.withColumn("rowkey",
                            F.concat_ws("|", F.col("legId"), F.col("flightDate")))
@@ -110,10 +110,3 @@ class FlightDataProcessor:
             )
     
         return df.select(*hbase_columns)
-    
-    def save_to_data(df,mode):
-        if mode == 1:
-            df.write.mode('overwrite').parquet('../data/cleaned')
-    
-        if mode == 2:
-            df.coalesce(1).write.mode('overwrite').parquet('../data/cleaned')

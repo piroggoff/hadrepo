@@ -4,3 +4,4 @@
 flight-analysis/data/cleaned
 flight-analysis/data/processed/
 flight-analysis/data/raw/*
+.DS_Store
