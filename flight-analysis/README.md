@@ -16,8 +16,7 @@
 
 4. Download datset:
     ```bash
-   pip install -r requirements.txt
-    pip install -e .
+
    
 5. Write prepared data to HBase:
    ````bash

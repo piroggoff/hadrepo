@@ -1,92 +1,78 @@
-# src/writing.py
+# writing.py
+
 import happybase
 import logging
 from pyspark.sql import DataFrame
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _create_connection(host: str, port: int) -> happybase.Connection:
+    return happybase.Connection(host=host, port=port)
 
 
-class WriteProcessor:
+def _create_hbase_table(connection, table_name, column_families):
+    """Создает таблицу в HBase, если она не существует."""
+    try:
+        tables = connection.tables()
+        if table_name.encode() not in tables:
+            connection.create_table(
+                table_name,
+                {cf: {} for cf in column_families}
+            )
+            logger.info(f"Таблица {table_name} создана")
+    except Exception as e:
+        logger.error(f"Ошибка создания таблицы: {str(e)}")
+        raise
 
-    def __init__(self, host: str = 'localhost', port: int = 9090, table_name: str = "flights", column_families={'cf1', 'cf2', 'cf3'}):
-        """Инициализация соединения с HBase через Thrift и создание таблицы, если необходимо"""
-        self.table_name = table_name
-        self.connection = self._create_connection(host, port)
+
+def _process_map_column(map_data):
+    """Обрабатывает map-колонки и извлекает данные в формате (qualifier, value)."""
+    if not map_data:
+        return []
+
+    return [
+        (key.split(':')[1], str(value))
+        for key, value in map_data.items()
+        if ':' in key
+    ]
 
 
+def _write_partition_to_hbase(rows):
+    """Функция, выполняемая на каждой Spark-партиции."""
+    connection = _create_connection('localhost', 9090)
+    table = connection.table('flights')
+    batch = table.batch()
 
-    @staticmethod
-    def _create_connection(host: str, port: int) -> happybase.Connection:
-        return happybase.Connection(host=host, port=port)
-
-    def _create_hbase_table(self,connection, table_name, column_families):
-        """Создает таблицу в HBase если она не существует"""
+    for row in rows:
         try:
-            tables = connection.tables()
-            if table_name.encode() not in tables:
-                connection.create_table(
-                    table_name,
-                    {cf: {} for cf in column_families}
-                )
-                logger.info(f"Таблица {table_name} создана")
+            row_key = str(row['rowkey'])
+            data = {}
+
+            for column, value in row.asDict().items():
+                if column == 'rowkey' or value is None:
+                    continue
+
+                cf = column.split('_', 1)[0]
+                map_items = _process_map_column(value)
+
+                for qualifier, v in map_items:
+                    col_name = f"{cf}:{qualifier}".encode()
+                    data[col_name] = str(v).encode()
+
+            if data:
+                batch.put(row_key.encode(), data)
+                logger.debug(f"Added to batch: {row_key}")
+
         except Exception as e:
-            logger.error(f"Ошибка создания таблицы: {str(e)}")
-            raise
+            logger.error(f"Ошибка обработки rowkey={row_key}: {e}")
+            continue
 
-    def _process_map_column(self,map_data):
-        """Обрабатывает map-колонки и извлекает данные в формате (qualifier, value)"""
-        if not map_data:
-            return []
+    batch.send()
+    connection.close()
 
-        # Пример данных: {'cf1:startingAirport': 'LAX'} -> ('startingAirport', 'LAX')
-        return [
-            (key.split(':')[1], str(value))
-            for key, value in map_data.items()
-            if ':' in key
-        ]
 
-    def save_to_hbase(self,table_name, df: DataFrame, host = "localhost"):
-        connection = self._create_connection(host)
-        column_families = {'cf1', 'cf2', 'cf3'}
-        self._create_hbase_table(connection,table_name,column_families)
-
-        table = connection.tables(table_name)
-
-        for index, row in df.iterrows():
-            try:
-                row_key = str(row['rowkey'])
-
-                # Подготовка данных для вставки
-                data = {}
-
-                # Обрабатываем каждую колонку
-                for column in df.columns:
-                    if column == 'rowkey':
-                        continue
-
-                    # Извлекаем семейство колонок
-                    cf = column.split('_')[0]
-
-                    # Обрабатываем map-данные
-                    map_items = self._process_map_column(row[column])
-
-                    # Добавляем в данные
-                    for qualifier, value in map_items:
-                        column_name = f"{cf}:{qualifier}"
-                        data[column_name.encode()] = str(value).encode()
-
-                # Вставляем данные
-                if data:
-                    table.put(row_key.encode(), data)
-                    logger.debug(f"Вставлена запись {row_key}")
-
-            except Exception as e:
-                logger.error(f"Ошибка обработки строки {index}: {str(e)}")
-                continue
-
-        connection.close()
-        logger.info("Все данные успешно загружены в HBase")
+def save_to_hbase(df: DataFrame):
+    """Сохраняет DataFrame в таблицу HBase 'flights'."""
+    df.foreachPartition(_write_partition_to_hbase)
