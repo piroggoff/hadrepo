@@ -16,11 +16,13 @@
 
 4. Download datset:
     ```bash
-    pip install -r requirements.txt
+   pip install -r requirements.txt
     pip install -e .
    
 5. Write prepared data to HBase:
    ````bash
    python -m scripts.data_clean_to_hbase
 
-All scripts must be start from hadrepo/flight_analysis
+## FAQ
+* All scripts must be start from hadrepo/flight_analysis
+* In data/raw you cant find demo dataset, that contain first 10000 rows of original csv
