@@ -11,6 +11,7 @@ class Paths:
     DATA_RAW: Path = DATA_DIR / "raw"
     DATA_CLEANED: Path = DATA_DIR / "cleaned"
 
+
     @classmethod
     def print_all(cls):
         """Show all paths"""

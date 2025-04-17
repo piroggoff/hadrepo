@@ -1,4 +1,4 @@
-import cleaning
+from src.cleaning import CleanProcessor
 from pyspark.sql import SparkSession
 
 print("1. Сохранение данных в raw\n2. экспорт данных в HBase\n3. просмотр результата\n")
