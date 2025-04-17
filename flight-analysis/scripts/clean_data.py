@@ -16,6 +16,7 @@ if mode == 1:
     mode = int(input())
 
     df_processed = cleaning.process_segments(df_cleaned)
+    df_processed = cleaning.prepare_hbase_data(df_processed)
     cleaning.save_to_data(df_processed,mode)
 
     if mode not in [1,2]: print('blya')
