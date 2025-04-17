@@ -21,7 +21,6 @@
    
 5. Write prepared data to HBase:
    ````bash
-   python scripts/data_clean_to_hbase.py
-   
+   python -m scripts.data_clean_to_hbase
 
 All scripts must be start from hadrepo/flight_analysis

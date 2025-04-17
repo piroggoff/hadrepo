@@ -5,13 +5,31 @@ from pyspark.sql import DataFrame
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def create_hbase_table(connection, table_name, column_families):
+    """Создает таблицу в HBase если она не существует"""
+    try:
+        tables = connection.tables()
+        if table_name.encode() not in tables:
+            connection.create_table(
+                table_name,
+                {cf: {} for cf in column_families}
+            )
+            logger.info(f"Таблица {table_name} создана")
+    except Exception as e:
+        logger.error(f"Ошибка создания таблицы: {str(e)}")
+        raise
+
 
 class WriteProcessor:
 
-    def __init__(self, host: str = 'localhost', port: int = 9090, table_name="flights"):
-        """"Initialisation HBase connect throught the Thrift"""
+    def __init__(self, host: str = 'localhost', port: int = 9090, table_name: str = "flights", column_families=None):
+        """Инициализация соединения с HBase через Thrift и создание таблицы, если необходимо"""
         self.table_name = table_name
         self.connection = self._create_connection(host, port)
+        # Создаем таблицу с заданными column_families
+        if column_families is None:
+            column_families = []
+        create_hbase_table(self.connection, self.table_name, column_families)
         self.table = self._get_table()
 
     @staticmethod
