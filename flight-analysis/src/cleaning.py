@@ -2,8 +2,7 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
 from typing import Optional
 import json
-from config import DATA_RAW
-
+from src.config import Paths
 
 class CleanProcessor:
 
@@ -18,7 +17,7 @@ class CleanProcessor:
             .appName("FlightDataToHBase") \
             .getOrCreate()
     
-    def process_pipeline(self, input_path: Optional[str] = DATA_RAW/"itineraries.csv") -> DataFrame:
+    def process_pipeline(self, input_path: Optional[str] = Paths.DATA_RAW/"itineraries.csv") -> DataFrame:
         df = self._load_data(input_path)
         df_cleaned = self._clean_data(df)
         df_processed = self._process_segments(df_cleaned)

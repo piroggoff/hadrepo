@@ -2,10 +2,18 @@
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+class Paths:
+    """Конфигурационная модель путей проекта."""
 
-DATA_RAW = PROJECT_ROOT / "flight-analysis/data/raw"
-DATA_CLEANED = PROJECT_ROOT / "flight-analysis/data/cleaned"
+    PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
 
-print(PROJECT_ROOT)
-print(DATA_RAW)
+    DATA_DIR: Path = PROJECT_ROOT / "flight-analysis/data"
+    DATA_RAW: Path = DATA_DIR / "raw"
+    DATA_CLEANED: Path = DATA_DIR / "cleaned"
+
+    @classmethod
+    def print_all(cls):
+        """Show all paths"""
+        for attr in dir(cls):
+            if not attr.startswith("_") and isinstance(getattr(cls, attr), Path):
+                print(f"{attr}: {getattr(cls, attr)}")
