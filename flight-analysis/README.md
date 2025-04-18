@@ -16,7 +16,7 @@
     ```bash
    cd scripts & python get_data & cd ..
    
-5. Write prepared data to HBase:
+5. Write and prepare data to HBase:
    ````bash
    python -m scripts.data_clean_to_hbase
 
