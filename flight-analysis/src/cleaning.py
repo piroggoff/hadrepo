@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+from src.config import Paths
 
 import json
 
@@ -8,7 +9,7 @@ def start_and_read():
     spark = SparkSession.builder.appName("FlightDataToHBase").getOrCreate()
 
     # 1. Загрузка данных
-    df = spark.read.option('header', 'true').csv("/home/femida/bigdata_project/hadrepo/flight-analysis/data/raw/itineraries.csv")
+    df = spark.read.option('header', 'true').csv(str(Paths.DATA_RAW/"itineraries.csv"))
 
     return df
 
@@ -114,7 +115,7 @@ def prepare_hbase_data(df):
 
 def save_to_data(df,mode):
     if mode == 1:
-        df.write.mode('overwrite').parquet('/home/femida/bigdata_project/hadrepo/flight-analysis/data/cleaned')
+        df.write.mode('overwrite').parquet(str(Paths.DATA_CLEANED))
 
     if mode == 2:
         df.coalesce(1).write.mode('overwrite').parquet('/home/femida/bigdata_project/hadrepo/flight-analysis/data/cleaned')
