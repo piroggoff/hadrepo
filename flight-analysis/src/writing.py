@@ -28,13 +28,11 @@ def _create_hbase_table(connection, table_name, column_families):
 
 
 def _process_map_column(map_data):
-    """Обрабатывает map-колонки и извлекает данные в формате (qualifier, value)."""
-    if not map_data:
+    if not isinstance(map_data, dict) or not map_data:
         return []
-
     return [
-        (key.split(':')[1], str(value))
-        for key, value in map_data.items()
+        (key.split(':', 1)[1], str(val))
+        for key, val in map_data.items()
         if ':' in key
     ]
 
