@@ -6,11 +6,10 @@
     ````bash
     cd hadrepo/flight-analysis/
     python3 -m venv .venv
-    source .venv/bin/activate  # Linux/Mac
+    source .venv/bin/activate  
    
 3. Install requirement packages:
     ````bash
-    pip install -r requirements.txt
     pip install -e .
 
 4. Download datset:
