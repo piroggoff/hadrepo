@@ -1,14 +1,13 @@
 ## USAGE
 1. Clone the repo:
-    ```bash
+    ````bash
     git clone https://github.com/piroggoff/hadrepo.git
-   2. Setup virtual environment:
-      ```bash
-      cd hadrepo/flight_analysis
-      python3 -m venv .venv
-      source .venv/bin/activate  # Linux/Mac
-                                 # Windows
-
+2. Setup virtual environment:
+    ````bash
+    cd hadrepo/flight_analysis
+    python3 -m venv .venv
+    source .venv/bin/activate  # Linux/Mac
+   
 3. Install requirement packages:
     ````bash
     pip install -r requirements.txt
