@@ -4,7 +4,7 @@
     git clone https://github.com/piroggoff/hadrepo.git
 2. Setup virtual environment:
     ````bash
-    cd hadrepo/flight_analysis
+    cd hadrepo/flight_analysis/
     python3 -m venv .venv
     source .venv/bin/activate  # Linux/Mac
    
