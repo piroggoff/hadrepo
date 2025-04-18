@@ -10,7 +10,7 @@
                                  # Windows
 
 3. Install requirement packages:
-    ```bash
+    ````bash
     pip install -r requirements.txt
     pip install -e .
 
