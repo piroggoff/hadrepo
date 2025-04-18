@@ -27,4 +27,4 @@
 **You must**
    ````bash
    create "flights","cf1","cf2","cf3"
-Automatically check and create table is not yet available
+In andl automatically check and create table is not yet available
