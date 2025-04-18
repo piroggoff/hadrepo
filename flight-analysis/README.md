@@ -25,7 +25,7 @@
 ## FAQ
 * All scripts must be start from hadrepo/flight_analysis
 * In data/raw you can find demo dataset, that contain first 10000 rows of original csv
-* **_andl_** - another data loader, with stream data processing, used for each partition method\
+* **_andl_** - another data loader, with stream data processing, using for each partition method\
 **You must**
    ````bash
    create "flights","cf1","cf2","cf3"
