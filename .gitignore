@@ -5,6 +5,3 @@ flight-analysis/data/cleaned
 flight-analysis/data/processed/
 flight-analysis/data/raw/_*
 .DS_Store
-test.py
-_sosi.py
-_write.py
